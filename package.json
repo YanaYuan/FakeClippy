@@ -1,0 +1,14 @@
+{
+  "name": "fakeclippy",
+  "version": "1.0.0",
+  "description": "AI Chat Interface for creating content with Claude AI",
+  "main": "api/index.py",
+  "scripts": {
+    "dev": "python server.py",
+    "build": "echo 'No build step required'"
+  },
+  "dependencies": {},
+  "engines": {
+    "node": ">=14.x"
+  }
+}
