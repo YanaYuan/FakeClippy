@@ -35,11 +35,11 @@ if not API_CONFIG["api_key"]:
 
 @app.route('/')
 def serve_index():
-    return send_from_directory('.', 'index.html')
+    return send_from_directory('public', 'index.html')
 
 @app.route('/<path:filename>')
 def serve_static(filename):
-    return send_from_directory('.', filename)
+    return send_from_directory('public', filename)
 
 @app.route('/api/chat', methods=['POST'])
 def chat():

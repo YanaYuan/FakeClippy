@@ -554,7 +554,6 @@ async function sendMessage() {
     
     if (loadingSpinner) {
         loadingSpinner.style.display = 'inline-block';
-        loadingSpinner.style.visibility = 'visible';
         console.log('Loading spinner shown');
     } else {
         console.error('Loading spinner not found!');
@@ -688,7 +687,6 @@ async function sendMessage() {
         
         if (sendIcon) {
             sendIcon.style.display = 'inline-block';
-            sendIcon.style.visibility = 'visible';
             console.log('Send icon restored');
         } else {
             console.error('Send icon not found during cleanup!');
