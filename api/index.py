@@ -1,11 +1,7 @@
-from flask import Flask, request, jsonify, Response
-from flask_cors import CORS
-import requests
+from flask import Flask, request, Response, jsonify
 import json
 import os
-
-app = Flask(__name__)
-CORS(app)
+import requests
 
 # API Configuration - Load from environment variables
 API_CONFIG = {
@@ -14,15 +10,28 @@ API_CONFIG = {
     "model": os.getenv("CLAUDE_MODEL", "claude-sonnet-4-20250514")
 }
 
-@app.route('/api/chat', methods=['POST'])
-def chat():
+app = Flask(__name__)
+
+# CORS headers for all responses
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
+    response.headers.add('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+    return response
+
+@app.route('/api/chat', methods=['POST', 'OPTIONS'])
+def handle_chat():
+    if request.method == 'OPTIONS':
+        return '', 200
+    
     try:
-        data = request.json
+        data = request.get_json()
         messages = data.get('messages', [])
         
         # Check if API key is configured
         if not API_CONFIG["api_key"]:
-            return jsonify({'error': 'API key not configured. Please set CLAUDE_API_KEY environment variable.'}), 500
+            return jsonify({'error': 'API key not configured'}), 500
         
         # Prepare the request to Claude API
         headers = {
@@ -49,44 +58,54 @@ def chat():
                 )
                 
                 if response.status_code != 200:
-                    yield f"data: {json.dumps({'error': f'API request failed with status {response.status_code}'})}\n\n"
+                    error_data = json.dumps({'error': f'API request failed with status {response.status_code}'})
+                    yield f"data: {error_data}\n\n"
                     return
                 
+                # Stream the response
                 for line in response.iter_lines():
                     if line:
                         line = line.decode('utf-8')
                         if line.startswith('data: '):
                             data_content = line[6:]  # Remove 'data: ' prefix
                             if data_content.strip() == '[DONE]':
-                                yield f"data: {json.dumps({'done': True})}\n\n"
+                                done_data = json.dumps({'done': True})
+                                yield f"data: {done_data}\n\n"
                                 break
                             try:
                                 chunk_data = json.loads(data_content)
-                                yield f"data: {json.dumps(chunk_data)}\n\n"
+                                output = json.dumps(chunk_data)
+                                yield f"data: {output}\n\n"
                             except json.JSONDecodeError:
                                 continue
-                                
+                
+                # Ensure connection is properly closed
+                response.close()
+                
             except requests.exceptions.Timeout:
-                yield f"data: {json.dumps({'error': 'Request timed out'})}\n\n"
+                error_data = json.dumps({'error': 'Request timed out'})
+                yield f"data: {error_data}\n\n"
             except requests.exceptions.RequestException as e:
-                yield f"data: {json.dumps({'error': f'Request failed: {str(e)}'})}\n\n"
+                error_data = json.dumps({'error': f'Request failed: {str(e)}'})
+                yield f"data: {error_data}\n\n"
             except Exception as e:
-                yield f"data: {json.dumps({'error': f'Server error: {str(e)}'})}\n\n"
+                error_data = json.dumps({'error': f'Server error: {str(e)}'})
+                yield f"data: {error_data}\n\n"
         
-        return Response(generate(), mimetype='text/plain', headers={
+        return Response(generate(), content_type='text/plain', headers={
             'Cache-Control': 'no-cache',
-            'Connection': 'keep-alive',
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Headers': 'Content-Type'
+            'Connection': 'close'
         })
-        
+                
     except Exception as e:
         return jsonify({'error': f'Server error: {str(e)}'}), 500
 
 @app.route('/api', methods=['GET'])
-def api_info():
+@app.route('/api/', methods=['GET'])
+def handle_api_info():
     return jsonify({'message': 'FakeClippy API is running', 'endpoints': ['/api/chat']})
 
-# For Vercel WSGI compatibility
-def application(environ, start_response):
+# Vercel WSGI handler
+def handler(environ, start_response):
     return app(environ, start_response)
+
