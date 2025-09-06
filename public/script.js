@@ -539,25 +539,12 @@ async function sendMessage() {
     sendButton.disabled = true;
     sendButton.classList.add('loading');
     
-    // Debug logging
-    console.log('Setting loading state...');
-    console.log('Send button:', sendButton);
-    console.log('Send icon:', sendIcon);
-    console.log('Loading spinner:', loadingSpinner);
+    // Add loading state to input wrapper and initialize progress
+    const inputWrapper = document.querySelector('.message-input-wrapper');
+    inputWrapper.classList.add('loading');
+    inputWrapper.style.setProperty('--progress', '0%');
     
-    if (sendIcon) {
-        sendIcon.style.display = 'none';
-        console.log('Send icon hidden');
-    } else {
-        console.error('Send icon not found!');
-    }
-    
-    if (loadingSpinner) {
-        loadingSpinner.style.display = 'inline-block';
-        console.log('Loading spinner shown');
-    } else {
-        console.error('Loading spinner not found!');
-    }
+    console.log('Loading state set - input wrapper progress border enabled');
     
     // Create placeholder for assistant message
     const chatMessages = document.getElementById('chatMessages');
@@ -621,6 +608,13 @@ async function sendMessage() {
                             if (delta.content) {
                                 assistantMessage += delta.content;
                                 
+                                // Update progress based on message length (simple heuristic)
+                                const estimatedProgress = Math.min(90, (assistantMessage.length / 10)); // Max 90%, reserve 10% for completion
+                                const inputWrapper = document.querySelector('.message-input-wrapper');
+                                if (inputWrapper) {
+                                    inputWrapper.style.setProperty('--progress', `${estimatedProgress}%`);
+                                }
+                                
                                 // Check if HTML is detected (once detected, stay in HTML mode)
                                 if (!isHtmlDetected && detectHTML(assistantMessage)) {
                                     isHtmlDetected = true;
@@ -677,28 +671,21 @@ async function sendMessage() {
         console.error('Error:', error);
         messageContent.innerHTML = 'Sorry, I encountered an error while processing your request. Please try again.';
     } finally {
-        // Re-enable button
+        // Re-enable button and remove loading states
         sendButton.disabled = false;
         sendButton.classList.remove('loading');
         
-        const sendIcon = sendButton.querySelector('i');
-        console.log('Cleanup - Send icon:', sendIcon);
-        console.log('Cleanup - Loading spinner:', loadingSpinner);
+        // Remove loading state from input wrapper and complete progress
+        const inputWrapper = document.querySelector('.message-input-wrapper');
+        inputWrapper.style.setProperty('--progress', '100%');
         
-        if (sendIcon) {
-            sendIcon.style.display = 'inline-block';
-            console.log('Send icon restored');
-        } else {
-            console.error('Send icon not found during cleanup!');
-        }
+        // Small delay to show completion, then remove loading class
+        setTimeout(() => {
+            inputWrapper.classList.remove('loading');
+            inputWrapper.style.removeProperty('--progress');
+        }, 200);
         
-        if (loadingSpinner) {
-            loadingSpinner.style.display = 'none';
-            console.log('Loading spinner hidden');
-        } else {
-            console.error('Loading spinner not found during cleanup!');
-        }
-        
+        console.log('Loading state cleared - progress border completed');
         messageInput.focus();
     }
 }

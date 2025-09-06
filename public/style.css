@@ -244,6 +244,19 @@ header h1 {
     border-color: #667eea;
 }
 
+/* Progress border states */
+.message-input-wrapper.loading {
+    border: 2px solid transparent;
+    background: linear-gradient(white, white) padding-box,
+                linear-gradient(90deg, #667eea 0%, #667eea var(--progress, 0%), #e0e0e0 var(--progress, 0%), #e0e0e0 100%) border-box;
+    transition: none;
+}
+
+.message-input-wrapper.loading:focus-within {
+    background: linear-gradient(white, white) padding-box,
+                linear-gradient(90deg, #667eea 0%, #667eea var(--progress, 0%), #e0e0e0 var(--progress, 0%), #e0e0e0 100%) border-box;
+}
+
 .input-icon-btn {
     background: none;
     border: none;
@@ -290,24 +303,6 @@ header h1 {
 .send-btn.loading {
     opacity: 0.7;
     cursor: not-allowed;
-}
-
-.send-btn.loading .fa-paper-plane {
-    display: none !important;
-}
-
-.send-btn.loading #loadingSpinner {
-    display: inline-block !important;
-}
-
-#loadingSpinner {
-    width: 16px;
-    height: 16px;
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    border-top: 2px solid white;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    display: none;
 }
 
 .file-list {
