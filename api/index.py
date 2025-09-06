@@ -2,6 +2,7 @@ from flask import Flask, request, Response, jsonify
 import json
 import os
 import requests
+from datetime import datetime
 
 # API Configuration - Load from environment variables
 API_CONFIG = {
@@ -26,11 +27,18 @@ def handle_chat():
         return '', 200
     
     try:
+        print(f"API Key configured: {bool(API_CONFIG['api_key'])}")
+        print(f"Base URL: {API_CONFIG['base_url']}")
+        print(f"Model: {API_CONFIG['model']}")
+        
         data = request.get_json()
         messages = data.get('messages', [])
         
+        print(f"Received messages count: {len(messages)}")
+        
         # Check if API key is configured
         if not API_CONFIG["api_key"]:
+            print("ERROR: API key not configured")
             return jsonify({'error': 'API key not configured'}), 500
         
         # Prepare the request to Claude API
@@ -103,7 +111,21 @@ def handle_chat():
 @app.route('/api', methods=['GET'])
 @app.route('/api/', methods=['GET'])
 def handle_api_info():
-    return jsonify({'message': 'FakeClippy API is running', 'endpoints': ['/api/chat']})
+    return jsonify({
+        'message': 'FakeClippy API is running', 
+        'endpoints': ['/api/chat'],
+        'api_key_configured': bool(API_CONFIG["api_key"]),
+        'base_url': API_CONFIG["base_url"],
+        'model': API_CONFIG["model"]
+    })
+
+@app.route('/api/health', methods=['GET'])
+def health_check():
+    return jsonify({
+        'status': 'healthy',
+        'api_key_configured': bool(API_CONFIG["api_key"]),
+        'timestamp': str(datetime.utcnow()) if 'datetime' in globals() else 'unknown'
+    })
 
 # Vercel WSGI handler
 def handler(environ, start_response):
